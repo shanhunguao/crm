@@ -1,0 +1,33 @@
+package com.ykhd.office.repository;
+
+import java.util.List;
+
+import org.apache.ibatis.annotations.Select;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.ykhd.office.domain.entity.OfficeAccount;
+import com.ykhd.office.domain.resp.OfficeAccountDto;
+
+public interface OfficeAccountMapper extends BaseMapper<OfficeAccount> {
+
+	/**
+	 * 按公众号排期次数查询公众号列表（分页）
+	 * @param notStates 无效的排期状态
+	 * @param condition 查询条件
+	 * @param sort
+	 * @param from
+	 * @param size
+	 */
+	@Select("select ifnull(oas.count, 0) as scheduleCount, oa.* from wm_office_account oa "
+			+ "left join (select count(1) as count, office_account as oaid from wm_oa_schedule where state not in (${notStates}) group by office_account) oas "
+			+ "on oa.id = oas.oaid where ${condition} "
+			+ "order by oas.count ${sort} limit ${from},${size}")
+	List<OfficeAccountDto> getOAListByScheduleCount(String notStates, String condition, String sort, int from, int size);
+	
+	/**
+	 * 查询公众号列表总数
+	 */
+	@Select("select ifnull(count(1), 0) from wm_office_account oa where ${condition}")
+	int total(String condition);
+	
+}

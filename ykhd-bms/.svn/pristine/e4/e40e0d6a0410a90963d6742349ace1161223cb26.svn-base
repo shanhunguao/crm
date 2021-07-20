@@ -1,0 +1,14 @@
+package com.ykhd.office.service;
+
+import java.math.BigDecimal;
+
+import com.baomidou.mybatisplus.extension.service.IService;
+import com.ykhd.office.domain.entity.JcFapiao;
+
+public interface IJcFapiaoService extends IService<JcFapiao> {
+
+    /**
+     * 自动生成销项票
+     */
+    Integer autoGenerationBill(BigDecimal total_money, Integer fapiaoType, BigDecimal fapiaoRates, Integer creator, String creatorName);
+}

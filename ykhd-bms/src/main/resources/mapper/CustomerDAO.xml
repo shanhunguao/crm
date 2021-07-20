@@ -1,0 +1,385 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ykhd.office.repository.CustomerMapper">
+
+    <!-- 以下两个<cache>标签二选一,第一个可以输出日志,第二个不输出日志 只要在对应的mapper配置文件中加入<cache />标签即可-->
+    <!--<cache type="org.mybatis.caches.ehcache.LoggingEhcache"/>-->
+
+    <sql id="Base_Column_List">
+        id, company, brand, industry,domain,linkman, phone, qq, wx, creator, create_time,is_lock,high_sea_time,belong_user
+    </sql>
+
+    <select id="getListByPage" resultType="com.ykhd.office.domain.resp.CustomerDto">
+        SELECT
+        <include refid="Base_Column_List"></include>
+        ,(SELECT NAME FROM bms_manager WHERE id =wm_customer.creator) AS creator_name
+        ,(SELECT NAME FROM bms_manager WHERE id =wm_customer.belong_user) AS belongUser_name
+        FROM wm_customer
+        <where>
+            <if test="condition.company != null and condition.company !=''">
+                AND company LIKE CONCAT('%',#{condition.company},'%')
+            </if>
+            <if test="condition.brand != null and condition.brand != '' ">
+                AND brand LIKE CONCAT('%',#{condition.brand},'%')
+            </if>
+            <if test="condition.industry != null">
+                AND industry = #{condition.industry}
+            </if>
+            <if test="condition.domain != null">
+                AND domain = #{condition.domain}
+            </if>
+            <if test="condition.creator != null">
+                AND creator = #{condition.creator}
+            </if>
+            <if test="condition.belongUser != null">
+                AND belong_user=#{condition.belongUser}
+            </if>
+            <if test="condition.deptbelongUser != null">
+                AND belong_user IN
+                <foreach collection="condition.deptbelongUser" item="belong_user" open="(" separator="," close=")">
+                    #{belong_user}
+                </foreach>
+            </if>
+            <if test="condition.isLock != null">
+                AND is_lock = #{condition.isLock}
+            </if>
+            <if test="condition.highSeaTimeStart!=null and condition.highSeaTimeStart!=''">
+                AND high_sea_time &gt;= CONCAT(#{condition.highSeaTimeStart},' 00:00:00')
+            </if>
+            <if test="condition.highSeaTimeEnd!=null and condition.highSeaTimeEnd!=''">
+                AND high_sea_time &lt;= CONCAT(#{condition.highSeaTimeEnd},' 23:59:59')
+            </if>
+            <if test="condition.contact != null and condition.contact !=''">
+                AND (
+                phone=#{condition.contact} OR qq=#{condition.contact} OR wx=#{condition.contact}
+                )
+            </if>
+            <if test="condition.isCooperate != null and condition.isCooperate !='' and condition.isCooperate == '0'.toString()">
+                AND id in (SELECT customer FROM wm_oa_schedule where state in(4,5))
+            </if>
+            <if test="condition.isCooperate != null and condition.isCooperate !='' and condition.isCooperate == '1'.toString()">
+                AND id not in (SELECT customer FROM wm_oa_schedule where state in(4,5))
+            </if>
+            AND is_deleted=0
+        </where>
+        ORDER BY id desc
+    </select>
+
+    <select id="getListByPageCount" resultType="java.lang.Integer">
+        SELECT
+        COUNT(*)
+        FROM wm_customer
+        <where>
+            <if test="condition.company != null and condition.company !=''">
+                AND company LIKE CONCAT('%',#{condition.company},'%')
+            </if>
+            <if test="condition.brand != null and condition.brand != '' ">
+                AND brand LIKE CONCAT('%',#{condition.brand},'%')
+            </if>
+            <if test="condition.industry != null">
+                AND industry = #{condition.industry}
+            </if>
+            <if test="condition.domain != null">
+                AND domain = #{condition.domain}
+            </if>
+            <if test="condition.creator != null">
+                AND creator = #{condition.creator}
+            </if>
+            <if test="condition.belongUser != null">
+                AND belong_user=#{condition.belongUser}
+            </if>
+            <if test="condition.deptbelongUser != null">
+                AND belong_user IN
+                <foreach collection="condition.deptbelongUser" item="belong_user" open="(" separator="," close=")">
+                    #{belong_user}
+                </foreach>
+            </if>
+            <if test="condition.isLock != null">
+                AND is_lock = #{condition.isLock}
+            </if>
+            <if test="condition.highSeaTimeStart!=null and condition.highSeaTimeStart!=''">
+                AND high_sea_time &gt;= CONCAT(#{condition.highSeaTimeStart},' 00:00:00')
+            </if>
+            <if test="condition.highSeaTimeEnd!=null and condition.highSeaTimeEnd!=''">
+                AND high_sea_time &lt;= CONCAT(#{condition.highSeaTimeEnd},' 23:59:59')
+            </if>
+            <if test="condition.contact != null and condition.contact !=''">
+                AND (
+                phone=#{condition.contact} OR qq=#{condition.contact} OR wx=#{condition.contact}
+                )
+            </if>
+            <if test="condition.isCooperate != null and condition.isCooperate !='' and condition.isCooperate == '0'.toString()">
+                AND id in (SELECT customer FROM wm_oa_schedule where state in(4,5))
+            </if>
+            <if test="condition.isCooperate != null and condition.isCooperate !='' and condition.isCooperate == '1'.toString()">
+                AND id not in (SELECT customer FROM wm_oa_schedule where state in(4,5))
+            </if>
+            AND is_deleted=0
+        </where>
+        ORDER BY id desc
+    </select>
+
+
+    <select id="find" resultType="com.ykhd.office.domain.entity.Customer">
+        SELECT
+        <include refid="Base_Column_List"></include>
+        FROM wm_customer
+        <where>
+            <if test="condition.company != null and condition.company !=''">
+                AND company LIKE CONCAT('%',#{condition.company},'%')
+            </if>
+            <if test="condition.brand != null and condition.brand != '' ">
+                AND brand =#{condition.brand}
+            </if>
+            <if test="condition.industry != null">
+                AND industry = #{condition.industry}
+            </if>
+            <if test="condition.domain != null">
+                AND domain = #{condition.domain}
+            </if>
+            <if test="condition.creator != null">
+                AND creator = #{condition.creator}
+            </if>
+            <if test="condition.belongUser != null">
+                AND belong_user IN
+                <foreach collection="condition.belongUser" item="belong_user" open="(" separator="," close=")">
+                    #{belong_user}
+                </foreach>
+            </if>
+            <if test="condition.isLock != null">
+                AND is_lock = #{condition.isLock}
+            </if>
+            <if test="condition.highSeaTimeStart!=null">
+                AND high_sea_time &gt;= CONCAT(#{condition.highSeaTimeStart},' 00:00:00')
+            </if>
+            <if test="condition.highSeaTimeEnd!=null">
+                AND high_sea_time &lt;= CONCAT(#{condition.highSeaTimeEnd},' 23:59:59')
+            </if>
+            <if test="condition.contact != null and condition.contact !=''">
+                AND (
+                phone=#{condition.contact} OR qq=#{condition.contact} OR wx=#{condition.contact}
+                )
+            </if>
+            AND is_deleted=0
+        </where>
+    </select>
+
+    <select id="toHighseasCustomer" resultType="com.ykhd.office.domain.entity.Customer">
+SELECT
+	*
+FROM
+	wm_customer
+WHERE
+	id NOT IN ( SELECT DISTINCT customer FROM wm_oa_schedule WHERE create_time > DATE_SUB( CURDATE(), INTERVAL 2 MONTH ) AND state != 9 )
+	AND is_deleted = 0
+	AND is_lock =0
+    </select>
+
+
+    <select id="workbenchInfo" resultType="com.ykhd.office.domain.resp.Workbench">
+        SELECT
+        count(DISTINCT customer) AS new_customer,
+        COUNT( 1 ) AS orders,
+        SUM( execute_price ) AS month_exe,
+        SUM(
+        execute_price - cost_price - (
+        execute_price * cust_fapiao /(
+        100+cust_fapiao
+        )) +
+        CASE
+        oa_fapiao_type
+        WHEN 0 THEN
+        cost_price * oa_fapiao /(
+        100+oa_fapiao
+        ) ELSE 0
+        END - ifnull( sell_expense, 0 ) + ifnull( channel_expense, 0 )) AS month_pro,
+        <choose>
+            <when test="condition.createrids != null">
+                (
+                SELECT
+                SUM( cost_price )
+                FROM
+                wm_oa_schedule
+                WHERE
+                ISNULL( is_return_money ) AND state IN ('4','5')
+                AND creator IN
+                <foreach collection="condition.createrids" item="createrid" open="(" separator="," close=")">
+                    #{createrid}
+                </foreach>
+                ) AS no_money,(
+                SELECT
+                SUM( cost_price )
+                FROM
+                wm_oa_schedule
+                WHERE
+                ISNULL( is_return_money ) and is_pay=1 AND state IN ('4','5')
+                AND creator IN
+                <foreach collection="condition.createrids" item="createrid" open="(" separator="," close=")">
+                    #{createrid}
+                </foreach>
+                ) AS
+                none_money
+            </when>
+            <otherwise>
+                (
+                SELECT
+                SUM( cost_price )
+                FROM
+                wm_oa_schedule
+                WHERE
+                ISNULL( is_return_money ) AND state IN ('4','5')) AS no_money,(
+                SELECT
+                SUM( cost_price )
+                FROM
+                wm_oa_schedule
+                WHERE
+                ISNULL( is_return_money ) and is_pay=1 AND state IN ('4','5')) AS none_money
+            </otherwise>
+        </choose>
+        FROM
+        wm_oa_schedule
+        <where>
+            <if test="condition.lastmonth!=null">
+                AND PERIOD_DIFF( date_format( now( ) , '%Y%m' ) , date_format( create_time, '%Y%m' ) ) =1
+            </if>
+            <if test="condition.createrdate_start!=null">
+                AND create_time &gt;= CONCAT(#{condition.createrdate_start},' 00:00:00')
+            </if>
+            <if test="condition.createrdate_end!=null">
+                AND create_time &lt;= CONCAT(#{condition.createrdate_end},' 23:59:59')
+            </if>
+            <if test="condition.putdate_start!=null">
+                AND put_date &gt;= CONCAT(#{condition.putdate_start},' 00:00:00')
+            </if>
+            <if test="condition.putdate_end!=null">
+                AND put_date &lt;= CONCAT(#{condition.putdate_end},' 23:59:59')
+            </if>
+            <if test="condition.remoneydate_start!=null">
+                AND return_time &gt;= CONCAT(#{condition.remoneydate_start},' 00:00:00')
+            </if>
+            <if test="condition.remoneydate_end!=null">
+                AND return_time &lt;= CONCAT(#{condition.remoneydate_end},' 23:59:59')
+            </if>
+            <if test="condition.createrids != null">
+                AND creator IN
+                <foreach collection="condition.createrids" item="createrid" open="(" separator="," close=")">
+                    #{createrid}
+                </foreach>
+            </if>
+            AND state IN ('4','5')
+        </where>
+    </select>
+
+
+    <!--客户行业分类流水环比-->
+    <select id="industryRate" resultType="java.util.Map">
+        SELECT
+        IFNULL(wm_industry.industry_name,'其他') as industry_name,
+        SUM( wm_oa_schedule.execute_price ) AS total_executeprice
+        FROM
+        wm_oa_schedule
+        LEFT JOIN wm_customer ON wm_oa_schedule.customer = wm_customer.id
+        LEFT JOIN wm_industry ON wm_customer.industry = wm_industry.id
+        <where>
+            AND wm_oa_schedule.state IN ( '4', '5' ) AND wm_customer.is_deleted=0
+            <!--            <if test="condition.creator != null and condition.creator != ''">
+                            AND wm_oa_schedule.creator =#{condition.creator}
+                        </if>-->
+            <if test="condition.createrids != null">
+                AND wm_oa_schedule.creator IN
+                <foreach collection="condition.createrids" item="createrid" open="(" separator="," close=")">
+                    #{createrid}
+                </foreach>
+            </if>
+            <!--日期区间开始-->
+            <if test="condition.createrdate_start!=null">
+                AND wm_oa_schedule.create_time &gt;= CONCAT(#{condition.createrdate_start},' 00:00:00')
+            </if>
+            <if test="condition.createrdate_end!=null">
+                AND wm_oa_schedule.create_time &lt;= CONCAT(#{condition.createrdate_end},' 23:59:59')
+            </if>
+            <if test="condition.putdate_start!=null">
+                AND wm_oa_schedule.put_date &gt;= CONCAT(#{condition.putdate_start},' 00:00:00')
+            </if>
+            <if test="condition.putdate_end!=null">
+                AND wm_oa_schedule.put_date &lt;= CONCAT(#{condition.putdate_end},' 23:59:59')
+            </if>
+            <if test="condition.remoneydate_start!=null">
+                AND wm_oa_schedule.return_time &gt;= CONCAT(#{condition.remoneydate_start},' 00:00:00')
+            </if>
+            <if test="condition.remoneydate_end!=null">
+                AND wm_oa_schedule.return_time &lt;= CONCAT(#{condition.remoneydate_end},' 23:59:59')
+            </if>
+            <!--日期区间结束-->
+            GROUP BY industry_name
+        </where>
+    </select>
+
+    <select id="getcooperation" resultType="java.lang.Integer">
+SELECT
+	count(*)
+FROM
+	wm_oa_schedule
+WHERE
+	state IN ( 4, 5 )
+	AND customer = (
+	SELECT
+		id
+	FROM
+		`wm_customer`
+	WHERE
+		is_lock = 0
+		AND is_deleted = 0
+	AND id = #{userid})
+    </select>
+
+    <select id="getendOrder" resultType="java.lang.String">
+SELECT
+	create_time
+FROM
+	wm_oa_schedule
+WHERE
+	state IN ( 4, 5 )
+	AND customer =(
+	SELECT
+		id
+	FROM
+		`wm_customer`
+	WHERE
+		is_lock = 0
+		AND is_deleted = 0
+		AND id = #{userid}
+	)
+ORDER BY
+	create_time DESC
+	LIMIT 1
+    </select>
+
+    <!--客户合作详情-->
+    <select id="findInfoByCustomerId" resultType="java.util.Map">
+SELECT
+	COUNT(*) as total,
+	SUM( execute_price ) AS executeprice,
+	SUM( cost_price ) AS costprice,
+	SUM(
+		execute_price - cost_price - (
+			execute_price * cust_fapiao /(
+				100+cust_fapiao
+			)) +
+	CASE
+			oa_fapiao_type
+			WHEN 0 THEN
+			cost_price * oa_fapiao /(
+				100+oa_fapiao
+			) ELSE 0
+		END - ifnull( sell_expense, 0 ) + ifnull( channel_expense, 0 )) AS profit
+FROM
+	wm_oa_schedule
+WHERE
+	state IN ( 4, 5 )
+	AND customer = #{customerid}
+    </select>
+
+
+</mapper>

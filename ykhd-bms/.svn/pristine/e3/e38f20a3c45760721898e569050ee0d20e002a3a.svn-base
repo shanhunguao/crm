@@ -1,0 +1,23 @@
+package com.ykhd.office.service;
+
+import com.baomidou.mybatisplus.extension.service.IService;
+import com.ykhd.office.domain.bean.common.PageHelper;
+import com.ykhd.office.domain.entity.JcFapiao;
+import com.ykhd.office.domain.req.CjFapiaoCondition;
+
+import java.math.BigDecimal;
+
+public interface IJcFapiaoService extends IService<JcFapiao> {
+
+    PageHelper<JcFapiao> list(CjFapiaoCondition condition);
+
+    /**
+     * 自动生成销项票
+     */
+    Integer autoGenerationBill(BigDecimal total_money, Integer fapiaoType, BigDecimal fapiaoRates, Integer creator, String creatorName);
+
+    /**
+     * 通过支付记录自动生成进项票
+     */
+//    Integer autoGenerationIncomeBill(BigDecimal total_money, Integer fapiaoType, BigDecimal fapiaoRates, Integer medium, String mediumName);
+}

@@ -1,0 +1,57 @@
+package com.ykhd.office.service.impl;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.ykhd.office.controller.BaseController;
+import com.ykhd.office.domain.entity.Fapiao;
+import com.ykhd.office.domain.entity.OASReturn;
+import com.ykhd.office.service.ICjFapiaoService;
+import com.ykhd.office.service.IOASReturnService;
+import com.ykhd.office.util.dictionary.StateEnums;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.util.Date;
+
+/**
+ * @author zhoufan
+ * @Date 2021/3/18
+ */
+@Service
+public class CjFapiaoService extends ServiceImpl<BaseMapper<Fapiao>, Fapiao> implements ICjFapiaoService {
+
+    @Autowired
+    private IOASReturnService oasReturnService;
+
+    @Override
+    public Integer autoGenerationBill(Integer orderid) {
+        OASReturn oasReturn = oasReturnService.getById(orderid);
+        Fapiao fapiao = new Fapiao();
+        fapiao.setAuditUserid(BaseController.getManagerInfo().getId());
+//        添加发票信息
+        BigDecimal total_money = oasReturn.getAmount().setScale(2, BigDecimal.ROUND_CEILING); //价税合计
+        BigDecimal actual_money = oasReturn.getAmount().setScale(2, BigDecimal.ROUND_CEILING);    //实际价税合计
+        BigDecimal rates = new BigDecimal(0);                   //税率
+        BigDecimal money = actual_money.divide(rates.divide(new BigDecimal(100)).add(new BigDecimal(1)), 2, BigDecimal.ROUND_DOWN);    //金额=价税合计/（1+税率）
+        BigDecimal rates_money = actual_money.subtract(money);
+        fapiao.setBillNo(null);
+        fapiao.setMoney(money);
+        fapiao.setRates(rates);
+        fapiao.setRatesMoney(rates_money);
+        fapiao.setTotalMoney(total_money);
+        fapiao.setActualMoney(actual_money);
+        fapiao.setIsAdd("0");
+        fapiao.setCreateUserid(BaseController.getManagerInfo().getId());
+        fapiao.setCreateUsername(BaseController.getManagerInfo().getName());
+        fapiao.setCreateDate(new Date());
+        fapiao.setState(String.valueOf(StateEnums.State4Fapiao.审核通过.code()));
+        fapiao.setIsBalance("1");    //销项发票不需要结算薪资，默认已结算
+        fapiao.setBillNo("system generate");
+        fapiao.setSource(1);
+        save(fapiao);
+        return fapiao.getId();
+    }
+
+
+}

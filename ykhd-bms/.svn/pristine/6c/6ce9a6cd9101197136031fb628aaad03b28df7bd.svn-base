@@ -1,0 +1,12 @@
+package com.ykhd.office.service;
+
+import com.baomidou.mybatisplus.extension.service.IService;
+import com.ykhd.office.domain.entity.JcOASchedule;
+
+public interface IJcOAScheduleService extends IService<JcOASchedule> {
+
+	/**
+	 * 确认公众号排期，生成协议排期
+	 */
+	boolean confirm_create(Integer oaScheduleId, Integer oaFapiao, Integer oaFapiaoType);
+}

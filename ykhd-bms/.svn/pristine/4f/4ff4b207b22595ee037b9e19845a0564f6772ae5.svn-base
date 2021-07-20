@@ -1,0 +1,108 @@
+package com.ykhd.office.service;
+
+import java.math.BigDecimal;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.web.multipart.MultipartFile;
+
+import com.baomidou.mybatisplus.extension.service.IService;
+import com.ykhd.office.domain.bean.common.PageHelpers;
+import com.ykhd.office.domain.entity.OASReturn;
+import com.ykhd.office.domain.req.OASReturnCondition;
+import com.ykhd.office.domain.req.OASReturnSubmit;
+import com.ykhd.office.domain.resp.OASReturnDto;
+
+public interface IOASReturnService extends IService<OASReturn> {
+
+	/**
+	 * 分页列表
+	 */
+	PageHelpers<OASReturnDto> getListByPage(OASReturnCondition condition);
+	
+	/**
+	 * 导出excel
+	 */
+	void exportExcel(OASReturnCondition condition, HttpServletResponse response);
+	
+	/**
+	 * 排期已回款金额（待确认+待复核+已回款）
+	 */
+	List<BigDecimal> totalReturn(List<Integer> schedule);
+	
+	/**
+	 * 排期已回款金额（已回款）
+	 */
+	BigDecimal totalReturnFinish(Integer schedule);
+	
+	/**
+	 * 新增回款申请
+	 */
+	boolean addOASReturn(OASReturnSubmit submit);
+	
+	/**
+	 * 确认回款
+	 */
+	int confirm(List<Integer> id, MultipartFile[] files, String date, String remark);
+	
+	/**
+	 * 驳回申请
+	 */
+	int refuse(List<Integer> id);
+	
+	/**
+	 * 复核回款
+	 */
+	boolean check(Integer id, List<String> oldPath, MultipartFile[] files, String date, String remark);
+	
+	/**
+	 * 批量复核通过
+	 */
+	boolean checkBatch(List<Integer> id, MultipartFile[] files);
+	
+	/**
+	 * 驳回回款到待确认状态
+	 */
+	int checkFailure(List<Integer> id, String reason);
+	
+	/**
+	 * API: 排期已回款总额 scheduleId --> sum(amount)
+	 */
+	Map<Integer, BigDecimal> queryTotalReturnByScheId(Collection<Integer> collection);
+	
+	/**
+	 * API: scheduleId --> returnRemark
+	 */
+	Map<Integer, String> queryReturnRemarkByScheId(Collection<Integer> collection);
+	/**
+	 * API：returnRemark --> scheduleId
+	 */
+	List<Integer> queryOascheIdByReturnRemark(String returnRemark);
+	
+	/**
+	 * API: 回填销项项发票id
+	 */
+	boolean setFapiao(Integer fapiaoId, List<Integer> ids);
+	
+	/**
+	 * API: 清空销项发票id
+	 */
+	boolean clearFapiao(List<Integer> fapiaoIds);
+	
+	/**
+	 * API：scheduleId --> 是否已开销项发票
+	 */
+	Map<Integer, Boolean> ifMakeFapiao(Collection<Integer> collection);
+	
+	/**
+	 * API：已开销项发票的 scheduleId
+	 */
+	List<Integer> makeFapiao();
+	/**
+	 * API：未开销项发票的 scheduleId
+	 */
+	List<Integer> noMakeFapiao();
+}

@@ -1,0 +1,52 @@
+package com.ykhd.office.service.impl;
+
+import java.math.BigDecimal;
+import java.util.Date;
+
+import org.springframework.stereotype.Service;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.ykhd.office.controller.BaseController;
+import com.ykhd.office.domain.entity.JcFapiao;
+import com.ykhd.office.service.IJcFapiaoService;
+import com.ykhd.office.util.dictionary.StateEnums;
+
+/**
+ * @author zhoufan
+ * @Date 2021/3/18
+ */
+@Service
+public class JcFapiaoService extends ServiceImpl<BaseMapper<JcFapiao>, JcFapiao> implements IJcFapiaoService {
+
+    @Override
+    public Integer autoGenerationBill(BigDecimal total_money, Integer fapiaoType, BigDecimal fapiaoRates, Integer creator, String creatorName) {
+    	Date date = new Date();
+    	JcFapiao fapiao = new JcFapiao();
+        fapiao.setAuditUserid(BaseController.getManagerInfo().getId());
+//        添加发票信息
+        BigDecimal money = total_money.divide(fapiaoRates.divide(new BigDecimal(100)).add(new BigDecimal(1)), 2, BigDecimal.ROUND_DOWN);    //金额=价税合计/（1+税率）
+        BigDecimal rates_money = total_money.subtract(money);
+        fapiao.setBillNo(null);
+        fapiao.setMoney(money);
+        fapiao.setRates(fapiaoRates);
+        fapiao.setRatesMoney(rates_money);
+        fapiao.setTotalMoney(total_money);
+        fapiao.setActualMoney(total_money);
+        fapiao.setType(fapiaoType == 0 ? "1" : "0");
+        fapiao.setIsAdd("0");
+        fapiao.setCreateUserid(creator);
+        fapiao.setCreateUsername(creatorName);
+        fapiao.setCreateDate(date);
+        fapiao.setState(String.valueOf(StateEnums.State4Fapiao.审核通过.code()));
+        fapiao.setIsBalance("1");    //销项发票不需要结算薪资，默认已结算
+        fapiao.setBillNo("system generate");
+        fapiao.setSource(1);
+        fapiao.setMakeName("杭州优客互动网络科技有限公司");
+        fapiao.setMakeDate(date);
+        save(fapiao);
+        return fapiao.getId();
+    }
+
+
+}

@@ -1,0 +1,28 @@
+package com.ykhd.office.controller;
+
+import com.ykhd.office.domain.req.JcFapiaoCondition;
+import com.ykhd.office.service.IJcFapiaoService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/cjfapiao")
+public class JcFapiaoController extends BaseController {
+
+    @Autowired
+    private IJcFapiaoService jcFapiaoService;
+
+    /**
+     * 查询进项发票列表
+     */
+    @GetMapping("/list")
+    public Object list(JcFapiaoCondition fapiaoCondition) {
+        return jcFapiaoService.list(fapiaoCondition);
+    }
+
+
+
+
+}

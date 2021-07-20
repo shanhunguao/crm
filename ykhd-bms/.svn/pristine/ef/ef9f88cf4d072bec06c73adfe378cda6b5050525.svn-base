@@ -1,0 +1,113 @@
+package com.ykhd.office.service.impl;
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.ykhd.office.controller.BaseController;
+import com.ykhd.office.domain.bean.common.PageHelper;
+import com.ykhd.office.domain.entity.JcFapiao;
+import com.ykhd.office.domain.req.CjFapiaoCondition;
+import com.ykhd.office.repository.JcFapiaoMapper;
+import com.ykhd.office.service.IJcFapiaoService;
+import com.ykhd.office.util.dictionary.StateEnums;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.util.Date;
+
+/**
+ * @author zhoufan
+ * @Date 2021/3/18
+ */
+@Service
+public class JcFapiaoService extends ServiceImpl<BaseMapper<JcFapiao>, JcFapiao> implements IJcFapiaoService {
+
+
+    @Autowired
+    private JcFapiaoMapper jcFapiaoMapper;
+
+
+    @Override
+    public PageHelper<JcFapiao> list(CjFapiaoCondition condition) {
+        QueryWrapper<JcFapiao> wrapper = new QueryWrapper<>();
+        if (StringUtils.isNotEmpty(condition.getBillNo())) {
+            wrapper.eq("bill_no", condition.getBankNo());
+        }
+        if (StringUtils.isNotEmpty(condition.getEnterName())) {
+            wrapper.eq("enter_name", condition.getEnterName());
+        }
+        if (StringUtils.isNotEmpty(condition.getIsAdd())) {
+            wrapper.eq("is_add", condition.getIsAdd());
+        }
+        wrapper.apply(StringUtils.isNotEmpty(condition.getCreateDateStart()),
+                "date_format (create_date,'%Y-%m-%d') >= date_format('" + condition.getCreateDateStart() + "','%Y-%m-%d')");
+        wrapper.apply(StringUtils.isNotEmpty(condition.getCreateDateEnd()),
+                "date_format (create_date,'%Y-%m-%d') <= date_format('" + condition.getCreateDateEnd() + "','%Y-%m-%d')");
+        wrapper.orderByDesc("create_date");
+        IPage<JcFapiao> jcFapiaoIPage = jcFapiaoMapper.selectPage(new Page<>(condition.getPage(), condition.getSize()), wrapper);
+        return new PageHelper<>(condition.getPage(), condition.getSize(), jcFapiaoIPage.getTotal(), jcFapiaoIPage.getRecords());
+    }
+
+    @Override
+    public Integer autoGenerationBill(BigDecimal total_money, Integer fapiaoType, BigDecimal fapiaoRates, Integer creator, String creatorName) {
+        Date date = new Date();
+        JcFapiao fapiao = new JcFapiao();
+        fapiao.setAuditUserid(BaseController.getManagerInfo().getId());
+//        添加发票信息
+        BigDecimal money = total_money.divide(fapiaoRates.divide(new BigDecimal(100)).add(new BigDecimal(1)), 2, BigDecimal.ROUND_DOWN);    //金额=价税合计/（1+税率）
+        BigDecimal rates_money = total_money.subtract(money);
+        fapiao.setBillNo(null);
+        fapiao.setMoney(money);
+        fapiao.setRates(fapiaoRates);
+        fapiao.setRatesMoney(rates_money);
+        fapiao.setTotalMoney(total_money);
+        fapiao.setActualMoney(total_money);
+        fapiao.setType(fapiaoType == 0 ? "1" : "0");
+        fapiao.setIsAdd("0");
+        fapiao.setCreateUserid(creator);
+        fapiao.setCreateUsername(creatorName);
+        fapiao.setCreateDate(date);
+        fapiao.setState(String.valueOf(StateEnums.State4Fapiao.审核通过.code()));
+        fapiao.setIsBalance("1");    //销项发票不需要结算薪资，默认已结算
+        fapiao.setBillNo("system generate");
+        fapiao.setSource(1);
+        fapiao.setMakeName("杭州优客互动网络科技有限公司");
+        fapiao.setMakeDate(date);
+        save(fapiao);
+        return fapiao.getId();
+    }
+
+
+//    @Override
+//    public Integer autoGenerationIncomeBill(BigDecimal total_money, Integer fapiaoType, BigDecimal fapiaoRates, Integer medium, String mediumName) {
+//        Date date = new Date();
+//        JcFapiao fapiao = new JcFapiao();
+//        BigDecimal money = total_money.divide(fapiaoRates.divide(new BigDecimal(100)).add(new BigDecimal(1)), 2, BigDecimal.ROUND_DOWN);    //金额=价税合计/（1+税率）
+//        BigDecimal rates_money = total_money.subtract(money); //税额(税价合计-金额)
+//        fapiao.setMoney(money);
+//        fapiao.setRates(fapiaoRates);
+//        fapiao.setRatesMoney(rates_money);
+//        fapiao.setTotalMoney(total_money);
+//        fapiao.setType(fapiaoType == 0 ? "1" : "0");
+//        fapiao.setIsAdd("1");        //是否进项（0-销项，1-进项）
+//        fapiao.setIsBalance("1");    //进项发票不用结算薪资，使用付款记录进行结算
+//        fapiao.setCreateUserid(medium);
+//        fapiao.setCreateUsername(mediumName);
+//        fapiao.setCreateDate(date);
+//        fapiao.setFapiaoCode("/");
+//        fapiao.setState(String.valueOf(StateEnums.State4Fapiao.审核通过.code()));
+//        fapiao.setSource(1);
+//        fapiao.setEnterName("/");
+//        fapiao.setMakeName("杭州优客互动网络科技有限公司");
+//        fapiao.setMakeDate(date);
+//        fapiao.setVerificatioTime(date);
+//        fapiao.setBillNo("system generate");
+//        save(fapiao);
+//        return fapiao.getId();
+//    }
+
+}

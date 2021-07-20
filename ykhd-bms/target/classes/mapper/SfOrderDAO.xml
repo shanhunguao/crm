@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ykhd.office.repository.SfOrderMapper">
+
+    <!-- 以下两个<cache>标签二选一,第一个可以输出日志,第二个不输出日志 只要在对应的mapper配置文件中加入<cache />标签即可-->
+    <!--    <cache type="org.mybatis.caches.ehcache.LoggingEhcache"/>-->
+
+
+    <resultMap id="SfOrder" type="com.ykhd.office.domain.resp.SfOrderDto">
+        <id column="id" property="id"/>
+        <result column="brand_name" property="brandName"/>
+        <result column="product_name" property="productName"/>
+        <result column="terrace" property="terrace"/>
+        <result column="order_day_number" property="orderDayNumber"/>
+        <result column="order_week_number" property="orderWeekNumber"/>
+        <result column="is_return_money" property="isReturnMoney"/>
+        <result column="group_date" property="groupDate"/>
+        <result column="medium" property="medium"/>
+        <result column="return_remark" property="returnRemark"/>
+        <result column="return_date" property="returnDate"/>
+        <result column="create_userid" property="createUserid"/>
+        <result column="create_username" property="createUsername"/>
+        <result column="state" property="state"/>
+        <result column="create_time" property="createTime"/>
+        <result column="medium_name" property="mediumName"/>
+        <collection property="sfOrderDetailsList" ofType="com.ykhd.office.domain.entity.SfOrderDetails">
+            <result column="specification_name" property="specificationName"/>
+            <result column="supply_price" property="supplyPrice"/>
+            <result column="group_purchase_price" property="groupPurchasePrice"/>
+            <result column="order_id" property="orderId"/>
+            <result column="create_time" property="createTime"/>
+        </collection>
+    </resultMap>
+
+
+    <select id="queryPage" resultMap="SfOrder">
+        SELECT sf_order.*, sf_order_details.*,( SELECT NAME FROM bms_manager WHERE id = sf_order.create_userid ) AS
+        create_username, (SELECT NAME FROM sf_medium WHERE id=sf_order.`medium`) AS medium_name
+        FROM
+        `sf_order`
+        LEFT JOIN sf_order_details ON sf_order.id = sf_order_details.order_id
+        <where>
+            <if test="condition != null">
+                <if test="condition.medium!=null">
+                    AND sf_order.medium =#{condition.medium}
+                </if>
+                <if test="condition.create_userid!=null">
+                    AND sf_order.create_userid=#{condition.create_userid}
+                </if>
+                <if test="condition.brand_name!=null and condition.brand_name!=''">
+                    AND sf_order.brand_name LIKE CONCAT('%',#{condition.brand_name},'%')
+                </if>
+                <if test="condition.product_name!=null and condition.product_name!=''">
+                    AND sf_order.product_name LIKE CONCAT('%',#{condition.product_name},'%')
+                </if>
+                <if test="condition.is_return_money!=null">
+                    AND sf_order.is_return_money=#{condition.is_return_money}
+                </if>
+                <if test="condition.createrdate_start!=null and condition.createrdate_start!=''">
+                    AND sf_order.create_time &gt;= CONCAT(#{condition.createrdate_start},' 00:00:00')
+                </if>
+                <if test="condition.createrdate_end!=null and condition.createrdate_end!=''">
+                    AND sf_order.create_time &lt;= CONCAT(#{condition.createrdate_end},' 23:59:59')
+                </if>
+                <if test="condition.group_date_start!=null and condition.group_date_start!=''">
+                    AND sf_order.group_date &gt;= CONCAT(#{condition.group_date_start},' 00:00:00')
+                </if>
+                <if test="condition.group_date_end!=null and condition.group_date_end!=''">
+                    AND sf_order.group_date &lt;= CONCAT(#{condition.group_date_end},' 23:59:59')
+                </if>
+                <if test="condition.state!=null and condition.state!=''">
+                    AND sf_order.state=#{condition.state}
+                </if>
+            </if>
+        </where>
+        ORDER BY sf_order.create_time DESC,sf_order_details.id;
+</select>
+
+    <select id="count" resultType="java.lang.Integer">
+        SELECT count(*) FROM `sf_order` LEFT JOIN sf_order_details on sf_order.id=sf_order_details.order_id
+        <where>
+            <if test="condition != null">
+                <if test="condition.medium!=null">
+                    AND sf_order.medium =#{condition.medium}
+                </if>
+                <if test="condition.create_userid!=null">
+                    AND sf_order.create_userid=#{condition.create_userid}
+                </if>
+                <if test="condition.brand_name!=null and condition.brand_name!=''">
+                    AND sf_order.brand_name LIKE CONCAT('%',#{condition.brand_name},'%')
+                </if>
+                <if test="condition.product_name!=null and condition.product_name!=''">
+                    AND sf_order.product_name LIKE CONCAT('%',#{condition.product_name},'%')
+                </if>
+                <if test="condition.is_return_money!=null">
+                    AND sf_order.is_return_money=#{condition.is_return_money}
+                </if>
+                <if test="condition.createrdate_start!=null and condition.createrdate_start!=''">
+                    AND sf_order.create_time &gt;= CONCAT(#{condition.createrdate_start},' 00:00:00')
+                </if>
+                <if test="condition.createrdate_end!=null and condition.createrdate_end!=''">
+                    AND sf_order.create_time &lt;= CONCAT(#{condition.createrdate_end},' 23:59:59')
+                </if>
+                <if test="condition.group_date_start!=null and condition.group_date_start!=''">
+                    AND sf_order.group_date &gt;= CONCAT(#{condition.group_date_start},' 00:00:00')
+                </if>
+                <if test="condition.group_date_end!=null and condition.group_date_end!=''">
+                    AND sf_order.group_date &lt;= CONCAT(#{condition.group_date_end},' 23:59:59')
+                </if>
+                <if test="condition.state!=null and condition.state!=''">
+                    AND sf_order.state=#{condition.state}
+                </if>
+            </if>
+        </where>
+    </select>
+
+
+    <insert id="add" useGeneratedKeys="true" keyProperty="id" parameterType="com.ykhd.office.domain.entity.SfOrder">
+INSERT INTO sf_order (brand_name, medium, order_week_number, product_name, order_day_number, group_date, terrace,create_userid,state)
+VALUES ( #{brandName}, #{medium}, #{orderWeekNumber}, #{productName}, #{orderDayNumber}, #{groupDate}, #{terrace},#{createUserid},#{state})
+</insert>
+
+
+    <select id="statsData" resultType="java.util.Map">
+        SELECT
+        count(DISTINCT sf_order.id) AS ordernumber,
+        SUM( sf_order_details.supply_price * sf_order.order_day_number ) AS ordermoney
+        FROM
+        `sf_order`
+        LEFT JOIN sf_order_details ON sf_order.id = sf_order_details.order_id
+        <where>
+            <if test="condition != null">
+                <if test="condition.medium!=null">
+                    AND sf_order.medium =#{condition.medium}
+                </if>
+                <if test="condition.create_userid!=null">
+                    AND sf_order.create_userid=#{condition.create_userid}
+                </if>
+                <if test="condition.brand_name!=null and condition.brand_name!=''">
+                    AND sf_order.brand_name LIKE CONCAT('%',#{condition.brand_name},'%')
+                </if>
+                <if test="condition.product_name!=null and condition.product_name!=''">
+                    AND sf_order.product_name LIKE CONCAT('%',#{condition.product_name},'%')
+                </if>
+                <if test="condition.is_return_money!=null">
+                    AND sf_order.is_return_money=#{condition.is_return_money}
+                </if>
+                <if test="condition.createrdate_start!=null and condition.createrdate_start!=''">
+                    AND sf_order.create_time &gt;= CONCAT(#{condition.createrdate_start},' 00:00:00')
+                </if>
+                <if test="condition.createrdate_end!=null and condition.createrdate_end!=''">
+                    AND sf_order.create_time &lt;= CONCAT(#{condition.createrdate_end},' 23:59:59')
+                </if>
+                <if test="condition.group_date_start!=null and condition.group_date_start!=''">
+                    AND sf_order.group_date &gt;= CONCAT(#{condition.group_date_start},' 00:00:00')
+                </if>
+                <if test="condition.group_date_end!=null and condition.group_date_end!=''">
+                    AND sf_order.group_date &lt;= CONCAT(#{condition.group_date_end},' 23:59:59')
+                </if>
+                <if test="condition.state!=null and condition.state!=''">
+                    AND sf_order.state=#{condition.state}
+                </if>
+            </if>
+        </where>
+    </select>
+
+
+</mapper>

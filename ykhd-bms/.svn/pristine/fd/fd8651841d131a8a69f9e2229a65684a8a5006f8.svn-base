@@ -1,0 +1,25 @@
+package com.ykhd.office.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import com.ykhd.office.service.IJcOAScheduleService;
+
+/**
+ * 集采
+ */
+@RequestMapping("/jcsche")
+public class JcOAScheduleController extends BaseController {
+	
+	@Autowired
+	private IJcOAScheduleService jcOAScheduleService;
+
+	/**
+	 * 确认公众号排期
+	 */
+	@PostMapping("/confirm_create")
+	public Object confirm_create(Integer schedule, Integer oaFapiao, Integer oaFapiaoType) {
+		return jcOAScheduleService.confirm_create(schedule, oaFapiao, oaFapiaoType);
+	}
+}

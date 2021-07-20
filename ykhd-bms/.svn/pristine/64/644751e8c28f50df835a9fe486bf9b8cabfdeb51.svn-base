@@ -1,0 +1,63 @@
+package com.ykhd.office.service.impl;
+
+import java.util.Date;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.ykhd.office.domain.entity.JcOASchedule;
+import com.ykhd.office.domain.entity.OASchedule;
+import com.ykhd.office.service.IJcOASReturnService;
+import com.ykhd.office.service.IJcOAScheduleService;
+import com.ykhd.office.service.IOAScheduleService;
+import com.ykhd.office.service.IOfficeAccountService;
+import com.ykhd.office.util.dictionary.StateEnums.State4OASchedule;
+import com.ykhd.office.util.dictionary.TypeEnums.Type4ApprovalMsg;
+
+@Service
+public class JcOAScheduleService extends ServiceImpl<BaseMapper<JcOASchedule>, JcOASchedule> implements IJcOAScheduleService {
+
+	@Autowired
+	private ApprovalMsgService approvalMsgService;
+	@Autowired
+	private IOAScheduleService oAScheduleService;
+	@Autowired
+	private IOfficeAccountService officeAccountService;
+	@Autowired
+	private IJcOASReturnService jcOASReturnService;
+	
+	@Override
+	@Transactional
+	public boolean confirm_create(Integer oaScheduleId, Integer oaFapiao, Integer oaFapiaoType) {
+		// 处理公众号排期
+		oAScheduleService.callback4JcConfirm(oaScheduleId);
+		// 创建集采排期
+		Date date = new Date();
+		OASchedule oaSchedule = oAScheduleService.getById(oaScheduleId);
+		JcOASchedule schedule = new JcOASchedule();
+		schedule.setOfficeAccount(oaSchedule.getOfficeAccount());
+		schedule.setBrand("优客媒介");
+		schedule.setCooperateMode(oaSchedule.getCooperateMode());
+		schedule.setPutDate(oaSchedule.getPutDate());
+		schedule.setPutPosition(oaSchedule.getPutPosition());
+		schedule.setCount(oaSchedule.getCount());
+		schedule.setExecutePrice(oaSchedule.getCostPrice());
+		schedule.setCostPrice(officeAccountService.queryCollectPrice(oaSchedule.getOfficeAccount()));
+		schedule.setCustFapiao(oaSchedule.getOaFapiao());
+		schedule.setOaFapiao(oaFapiao);
+		schedule.setOaFapiaoType(oaFapiaoType);
+		schedule.setCreateTime(date);
+		schedule.setState(State4OASchedule.待结算.code());
+		schedule.setIsReturnMoney(1); //默认已回款
+		schedule.setReturnTime(date);
+		Assert.state(save(schedule), "创建集采排期失败");
+		// 自动生成回款记录、开具销项发票
+		Assert.state(jcOASReturnService.autoCreate(schedule), "自动生成回款记录失败");
+		approvalMsgService.sendApprovalMsg(Type4ApprovalMsg.公众号排期待集采确认, null);
+		return true;
+	}
+}

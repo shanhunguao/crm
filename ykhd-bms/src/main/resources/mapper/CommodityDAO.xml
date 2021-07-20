@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ykhd.office.repository.SfCommodityMapper">
+
+    <!-- 以下两个<cache>标签二选一,第一个可以输出日志,第二个不输出日志 只要在对应的mapper配置文件中加入<cache />标签即可-->
+    <!--    <cache type="org.mybatis.caches.ehcache.LoggingEhcache"/>-->
+
+    <resultMap id="SfCommodity" type="com.ykhd.office.domain.resp.SfCommodityDto">
+        <id column="id" property="id"/>
+        <result column="brand_name" property="brandName"/>
+        <result column="product_name" property="productName"/>
+        <result column="commodity_images" property="commodityImages"/>
+        <result column="tax_type" property="taxType"/>
+        <result column="tax" property="tax"/>
+        <result column="origin_place" property="originPlace"/>
+        <result column="logistics" property="logistics"/>
+        <result column="ship_address" property="shipAddress"/>
+        <result column="freight_template" property="freightTemplate"/>
+        <result column="sales_return" property="salesReturn"/>
+        <result column="very" property="very"/>
+        <result column="return_address" property="returnAddress"/>
+        <result column="trade_mark_license" property="tradeMarkLicense"/>
+        <result column="quality_testing" property="qualityTesting"/>
+        <result column="manifest" property="manifest"/>
+        <result column="authorization" property="authorization"/>
+        <result column="brand_introduction" property="brandIntroduction"/>
+        <result column="more_pictures" property="morePictures"/>
+        <result column="selling_points" property="sellingPoints"/>
+        <result column="analyse" property="analyse"/>
+        <result column="detail" property="detail"/>
+        <result column="channel" property="channel"/>
+        <result column="photo_block" property="photoBlock"/>
+        <result column="state" property="state"/>
+        <result column="audit_desc" property="auditDesc"/>
+        <result column="create_time" property="createTime"/>
+        <result column="supplier_userid" property="supplierUserid"/>
+        <result column="create_username" property="createUsername"/>
+        <result column="business_license" property="businessLicense"/>
+        <collection property="commodityDetailsList" ofType="com.ykhd.office.domain.entity.SfCommodityDetails">
+            <result column="specification_name" property="specificationName"/>
+            <result column="specification_value" property="specificationValue"/>
+            <result column="specification_image" property="specificationImage"/>
+            <result column="official_retail_price" property="officialRetailPrice"/>
+            <result column="minimum_active_price" property="minimumActivePrice"/>
+            <result column="live_price" property="livePrice"/>
+            <result column="group_purchase_price" property="groupPurchasePrice"/>
+            <result column="supply_price" property="supplyPrice"/>
+            <result column="supply_no_price" property="supplyNoPrice"/>
+            <result column="channel_price" property="channelPrice"/>
+            <result column="isgift" property="isgift"/>
+            <result column="repertory" property="repertory"/>
+            <result column="merchant_number" property="merchantNumber"/>
+            <result column="commodity_id" property="commodityId"/>
+            <result column="specification_project" property="specificationProject"/>
+        </collection>
+    </resultMap>
+
+    <insert id="add" useGeneratedKeys="true" keyProperty="id" parameterType="com.ykhd.office.domain.entity.SfCommodity">
+    INSERT INTO sf_commodity (very, quality_testing, origin_place, channel, analyse, trade_mark_license,
+    logistics, product_name, return_address, authorization, supplier_userid, photo_block, state, tax_type,
+    brand_name, manifest, brand_introduction, tax, freight_template, commodity_images, sales_return, audit_desc,
+    detail, selling_points, more_pictures,sales_status,create_username,business_license)
+    VALUES (#{very}, #{qualityTesting}, #{originPlace}, #{channel}, #{analyse}, #{tradeMarkLicense}, #{logistics},
+    #{productName}, #{returnAddress}, #{authorization}, #{supplierUserid}, #{photoBlock}, #{state}, #{taxType},
+    #{brandName}, #{manifest}, #{brandIntroduction},
+    #{tax}, #{freightTemplate}, #{commodityImages}, #{salesReturn}, #{auditDesc}, #{detail}, #{sellingPoints},
+    #{morePictures},#{salesStatus},#{createUsername},#{businessLicense})
+</insert>
+
+    <select id="findId" resultMap="SfCommodity">
+        SELECT * FROM `sf_commodity` a LEFT JOIN sf_commodity_details b on a.id=b.commodity_id
+        <where>
+            <if test="id != null and id !=''">
+                AND a.id =#{condition.id}
+            </if>
+        </where>
+        ORDER BY a.create_time DESC
+    </select>
+
+
+</mapper>

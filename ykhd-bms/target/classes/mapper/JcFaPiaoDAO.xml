@@ -1,0 +1,578 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ykhd.office.repository.JcFapiaoMapper">
+
+    <!-- 以下两个<cache>标签二选一,第一个可以输出日志,第二个不输出日志 只要在对应的mapper配置文件中加入<cache />标签即可-->
+    <!--    <cache type="org.mybatis.caches.ehcache.LoggingEhcache"/>-->
+
+    <resultMap id="Invoice" type="com.ykhd.office.domain.resp.Invoice">
+        <id column="id" property="id"/>
+        <result column="bill_no" property="bill_no"/>
+        <result column="enter_name" property="enter_name"/>
+        <result column="make_date" property="make_date"/>
+        <result column="verificatio_time" property="verificatio_time"/>
+        <result column="make_name" property="make_name"/>
+        <result column="duty_no" property="duty_no"/>
+        <result column="bank_name" property="bank_name"/>
+        <result column="bank_no" property="bank_no"/>
+        <result column="bank_address" property="bank_address"/>
+        <result column="address" property="address"/>
+        <result column="phone" property="phone"/>
+        <result column="money" property="money"/>
+        <result column="rates" property="rates"/>
+        <result column="rates_money" property="rates_money"/>
+        <result column="total_money" property="total_money"/>
+        <result column="type" property="type"/>
+        <result column="is_add" property="is_add"/>
+        <result column="create_userid" property="create_userid"/>
+        <result column="create_username" property="creator_name"/>
+        <result column="create_date" property="create_date"/>
+        <result column="audit_userid" property="audit_userid"/>
+        <result column="audit_desc" property="audit_desc"/>
+        <result column="state" property="state"/>
+        <result column="is_balance" property="is_balance"/>
+        <result column="actual_money" property="actual_money"/>
+        <result column="fapiao_code" property="fapiaoCode"/>
+        <result column="fapiaoImg" property="fapiaoImg"/>
+        <result column="invoice_project" property="invoice_project"/>
+        <result column="audit_username" property="audit_username"/>
+        <collection property="invoiceRelevantList" ofType="com.ykhd.office.domain.resp.InvoiceRelevant">
+            <result column="society" property="society"/>
+            <result column="sell_name" property="sell_name"/>
+            <result column="order_time" property="order_time"/>
+        </collection>
+    </resultMap>
+
+    <resultMap id="fapiaoExcel" type="com.ykhd.office.domain.resp.Fapiao_Excel">
+        <id column="id" property="id"/>
+        <result column="bill_no" property="billNo"/>
+        <result column="enter_name" property="enterName"/>
+        <result column="make_date" property="makeDate"/>
+        <result column="verificatio_time" property="verificatioTime"/>
+        <result column="money" property="money"/>
+        <result column="rates" property="rates"/>
+        <result column="rates_money" property="ratesMoney"/>
+        <result column="total_money" property="totalMoney"/>
+        <result column="type" property="type"/>
+        <result column="is_add" property="is_add"/>
+        <result column="create_username" property="creatorName"/>
+        <result column="state" property="state"/>
+        <result column="fapiaoImg" property="fapiaoImg"/>
+        <result column="audit_username" property="auditUsername"/>
+        <collection property="invoiceRelevantList" ofType="com.ykhd.office.domain.resp.InvoiceRelevant2">
+            <result column="society" property="society"/>
+            <result column="sell_name" property="sellName"/>
+            <result column="sell_id" property="sellId"/>
+            <result column="order_time" property="orderTime"/>
+        </collection>
+    </resultMap>
+
+
+
+
+    <select id="toBillPaymentPage" resultType="java.util.HashMap">
+        SELECT
+        jc_payment_app.*,
+        IFNULL(jc_payment_app.oa_fapiao,'') AS oaFapiao,
+        IFNULL(jc_payment_app.oa_fapiao_type,'') AS oaFapiaoType,
+        (SELECT brand FROM wm_customer where id=jc_oa_schedule.customer) customer,
+        wm_office_account.NAME AS medium_name,
+        jc_oa_schedule.put_date,
+        jc_oa_schedule.put_position,
+        ( SELECT NAME FROM bms_manager WHERE id = jc_oa_schedule.creator ) AS create_username,
+        ( SELECT NAME FROM bms_manager WHERE id = jc_payment_app.creator ) AS mediumname
+        FROM
+        jc_payment_app,
+        jc_oa_schedule,
+        wm_office_account
+        <where>
+            jc_payment_app.`schedule` = jc_oa_schedule.id
+            AND jc_oa_schedule.office_account = wm_office_account.id
+            <if test="condition.creator!=null">
+                AND jc_payment_app.creator =#{condition.creator}
+            </if>
+            AND jc_payment_app.fapiao is NULL
+            AND jc_payment_app.oa_fapiao &lt;&gt; -1
+            AND jc_oa_schedule.state not in ('3','9')
+            <if test="condition.pay_account!=null">
+                AND jc_payment_app.pay_account LIKE CONCAT('%',#{condition.pay_account},'%')
+            </if>
+            <if test="condition.s_medium!=null">
+                AND wm_office_account.NAME LIKE CONCAT('%',#{condition.s_medium},'%')
+            </if>
+            <if test="condition.s_rec_name!=null">
+                AND jc_payment_app.account_holder like CONCAT('%',#{condition.s_rec_name},'%')
+            </if>
+            <if test="condition.state!=null">
+                AND jc_payment_app.state IN
+                <foreach collection="condition.state" item="state" open="(" separator="," close=")">
+                    #{state}
+                </foreach>
+            </if>
+        </where>
+        ORDER BY jc_payment_app.id DESC
+    </select>
+
+
+    <select id="toBillPaymentPageCount" resultType="java.lang.Integer">
+        SELECT
+        COUNT (*)
+        FROM
+        jc_payment_app,
+        jc_oa_schedule,
+        wm_office_account
+        <where>
+            jc_payment_app.`schedule` = jc_oa_schedule.id
+            AND jc_oa_schedule.office_account = wm_office_account.id
+            <if test="condition.creator!=null">
+                AND jc_payment_app.creator = #{condition.creator}
+            </if>
+            AND jc_payment_app.fapiao is NULL
+            AND jc_payment_app.oa_fapiao &lt;&gt;-1
+            AND jc_oa_schedule.state not in ('3','9')
+            <if test="condition.pay_account!=null">
+                AND jc_payment_app.pay_account LIKE CONCAT('%',#{condition.pay_account},'%')
+            </if>
+            <if test="condition.s_medium!=null">
+                AND wm_office_account.NAME LIKE CONCAT('%',#{condition.s_medium},'%')
+            </if>
+            <if test="condition.s_rec_name!=null">
+                AND jc_payment_app.account_holder like CONCAT('%',#{condition.s_rec_name},'%')
+            </if>
+            <if test="condition.state!=null">
+                AND jc_payment_app.state IN
+                <foreach collection="condition.state" item="state" open="(" separator="," close=")">
+                    #{state}
+                </foreach>
+            </if>
+        </where>
+        ORDER BY jc_payment_app.id DESC
+    </select>
+
+    <select id="queryPage" resultMap="Invoice">
+        SELECT jc_fapiao.*,
+        IFNULL(jc_fapiao.create_date,'') AS createDate,
+        IFNULL( jc_fapiao.fapiao_img, '' ) AS fapiaoImg,
+        ( SELECT NAME FROM bms_manager WHERE id = jc_fapiao.create_userid ) creator_name,
+        ( SELECT NAME FROM bms_manager WHERE id = jc_fapiao.audit_userid ) audit_username
+        <if test="condition.is_add == '1'.toString()">
+            ,IFNULL(( SELECT NAME FROM wm_office_account WHERE id = jc_oa_schedule.office_account ),'')AS society
+            ,IFNULL(( SELECT NAME FROM bms_manager WHERE id = jc_oa_schedule.creator ),'') AS sell_name
+            ,IFNULL( jc_oa_schedule.put_date,'') AS order_time
+        </if>
+        FROM
+        jc_fapiao
+        <if test="condition.is_add == '1'.toString()">
+            LEFT JOIN jc_payment_app ON jc_fapiao.id = jc_payment_app.fapiao
+            LEFT JOIN jc_oa_schedule ON jc_payment_app.SCHEDULE = jc_oa_schedule.id
+        </if>
+        <where>
+            <if test="condition != null">
+                <if test="condition.bill_no!=null and condition.bill_no!=''">
+                    AND jc_fapiao.bill_no LIKE CONCAT('%',#{condition.bill_no},'%')
+                </if>
+                <if test="condition.is_add!= null">
+                    AND jc_fapiao.is_add = #{condition.is_add}
+                </if>
+                <if test="condition.make_name!=null and condition.make_name!=''">
+                    AND jc_fapiao.make_name= #{condition.make_name}
+                </if>
+                <if test="condition.type!=null and condition.type!=''">
+                    AND jc_fapiao.type= #{condition.type}
+                </if>
+                <if test="condition.enter_name != null and condition.enter_name != ''">
+                    AND jc_fapiao.enter_name LIKE CONCAT('%',#{condition.enter_name},'%')
+                </if>
+                <!--日期区间开始-->
+                <if test="condition.createrdate_start!=null">
+                    AND jc_fapiao.create_date &gt;= CONCAT(#{condition.createrdate_start},' 00:00:00')
+                </if>
+                <if test="condition.createrdate_end!=null">
+                    AND jc_fapiao.create_date &lt;= CONCAT(#{condition.createrdate_end},' 23:59:59')
+                </if>
+                <if test="condition.makedate_start!=null">
+                    AND jc_fapiao.make_date &gt;= CONCAT(#{condition.makedate_start},' 00:00:00')
+                </if>
+                <if test="condition.makedate_end!=null">
+                    AND jc_fapiao.make_date &lt;= CONCAT(#{condition.makedate_end},' 23:59:59')
+                </if>
+                <if test="condition.verificatio_start!=null">
+                    AND jc_fapiao.verificatio_time &gt;= CONCAT(#{condition.verificatio_start},' 00:00:00')
+                </if>
+                <if test="condition.verificatio_end!=null">
+                    AND jc_fapiao.verificatio_time &lt;= CONCAT(#{condition.verificatio_end},' 23:59:59')
+                </if>
+                <!--日期区间结束-->
+                <if test="condition.create_userid!=null">
+                    AND jc_fapiao.create_userid = #{condition.create_userid}
+                </if>
+                <if test="condition.audit_userid!=null">
+                    AND jc_fapiao.audit_userid = #{condition.audit_userid}
+                </if>
+                <if test="condition.source!= null">
+                    AND jc_fapiao.source=#{condition.source}
+                </if>
+                <if test="condition.is_add == '1'.toString()">
+                    <if test="condition.order_xs != null">
+                        AND jc_oa_schedule.creator=#{condition.order_xs}
+                    </if>
+                    <if test="condition.society != null">
+                        AND jc_oa_schedule.office_account=(SELECT id from wm_office_account WHERE name LIKE
+                        CONCAT('%',#{condition.society},'%'))
+                    </if>
+                </if>
+                <if test="condition.state!=null">
+                    AND jc_fapiao.state IN
+                    <foreach collection="condition.state" item="state" open="(" separator="," close=")">
+                        #{state}
+                    </foreach>
+                </if>
+            </if>
+            AND is_deleted=0
+        </where>
+        ORDER BY jc_fapiao.create_date DESC
+    </select>
+
+
+    <select id="count" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM jc_fapiao
+        <if test="condition.is_add == '1'.toString()">
+            LEFT JOIN jc_payment_app ON jc_fapiao.id = jc_payment_app.fapiao
+            LEFT JOIN jc_oa_schedule ON jc_payment_app.SCHEDULE = jc_oa_schedule.id
+        </if>
+        <where>
+            <if test="condition != null">
+                <if test="condition.bill_no!=null and condition.bill_no!=''">
+                    AND jc_fapiao.bill_no LIKE CONCAT('%',#{condition.bill_no},'%')
+                </if>
+                <if test="condition.is_add != null">
+                    AND jc_fapiao.is_add = #{condition.is_add}
+                </if>
+                <if test="condition.make_name!=null and condition.make_name!=''">
+                    AND jc_fapiao.make_name= #{condition.make_name}
+                </if>
+                <if test="condition.type!=null and condition.type!=''">
+                    AND jc_fapiao.type= #{condition.type}
+                </if>
+                <if test="condition.enter_name != null and condition.enter_name != ''">
+                    AND jc_fapiao.enter_name LIKE CONCAT('%',#{condition.enter_name},'%')
+                </if>
+                <!--日期区间开始-->
+                <if test="condition.createrdate_start!=null">
+                    AND jc_fapiao.create_date &gt;= CONCAT(#{condition.createrdate_start},' 00:00:00')
+                </if>
+                <if test="condition.createrdate_end!=null">
+                    AND jc_fapiao.create_date &lt;= CONCAT(#{condition.createrdate_end},' 23:59:59')
+                </if>
+                <if test="condition.makedate_start!=null">
+                    AND jc_fapiao.make_date &gt;= CONCAT(#{condition.makedate_start},' 00:00:00')
+                </if>
+                <if test="condition.makedate_end!=null">
+                    AND jc_fapiao.make_date &lt;= CONCAT(#{condition.makedate_end},' 23:59:59')
+                </if>
+                <if test="condition.verificatio_start!=null">
+                    AND jc_fapiao.verificatio_time &gt;= CONCAT(#{condition.verificatio_start},' 00:00:00')
+                </if>
+                <if test="condition.verificatio_end!=null">
+                    AND jc_fapiao.verificatio_time &lt;= CONCAT(#{condition.verificatio_end},' 23:59:59')
+                </if>
+                <!--日期区间结束-->
+                <if test="condition.create_userid!=null">
+                    AND jc_fapiao.create_userid = #{condition.create_userid}
+                </if>
+                <if test="condition.audit_userid!=null">
+                    AND jc_fapiao.audit_userid = #{condition.audit_userid}
+                </if>
+                <if test="condition.source != null">
+                    AND jc_fapiao.source=#{condition.source}
+                </if>
+                <if test="condition.is_add == '1'.toString()">
+                    <if test="condition.order_xs != null">
+                        AND jc_oa_schedule.creator=#{condition.order_xs}
+                    </if>
+                    <if test="condition.society != null">
+                        AND jc_oa_schedule.office_account=(SELECT id from wm_office_account WHERE name LIKE
+                        CONCAT('%',#{condition.society},'%'))
+                    </if>
+                </if>
+                <if test="condition.state!=null">
+                    AND jc_fapiao.state IN
+                    <foreach collection="condition.state" item="state" open="(" separator="," close=")">
+                        #{state}
+                    </foreach>
+                </if>
+            </if>
+            AND is_deleted=0
+        </where>
+    </select>
+
+
+    <select id="statsData" resultType="java.util.Map">
+        SELECT count(*) as count,SUM( money ) AS money,
+        SUM( rates_money ) AS rates_money,
+        SUM( total_money ) AS total_money,
+        SUM( actual_money ) AS actual_money FROM (SELECT
+        jc_fapiao.* FROM jc_fapiao
+        <if test="condition.is_add == '1'.toString()">
+            LEFT JOIN jc_payment_app ON jc_fapiao.id = jc_payment_app.fapiao
+            LEFT JOIN jc_oa_schedule ON jc_payment_app.SCHEDULE = jc_oa_schedule.id
+        </if>
+        <where>
+            <if test="condition != null">
+                <if test="condition.bill_no!=null and condition.bill_no!=''">
+                    AND jc_fapiao.bill_no LIKE CONCAT('%',#{condition.bill_no},'%')
+                </if>
+                <if test="condition.is_add != null">
+                    AND jc_fapiao.is_add = #{condition.is_add}
+                </if>
+                <if test="condition.make_name!=null and condition.make_name!=''">
+                    AND jc_fapiao.make_name= #{condition.make_name}
+                </if>
+                <if test="condition.type!=null and condition.type!=''">
+                    AND jc_fapiao.type= #{condition.type}
+                </if>
+                <if test="condition.enter_name != null and condition.enter_name != ''">
+                    AND jc_fapiao.enter_name LIKE CONCAT('%',#{condition.enter_name},'%')
+                </if>
+                <!--日期区间开始-->
+                <if test="condition.createrdate_start!=null">
+                    AND jc_fapiao.create_date &gt;= CONCAT(#{condition.createrdate_start},' 00:00:00')
+                </if>
+                <if test="condition.createrdate_end!=null">
+                    AND jc_fapiao.create_date &lt;= CONCAT(#{condition.createrdate_end},' 23:59:59')
+                </if>
+                <if test="condition.makedate_start!=null">
+                    AND jc_fapiao.make_date &gt;= CONCAT(#{condition.makedate_start},' 00:00:00')
+                </if>
+                <if test="condition.makedate_end!=null">
+                    AND jc_fapiao.make_date &lt;= CONCAT(#{condition.makedate_end},' 23:59:59')
+                </if>
+                <if test="condition.verificatio_start!=null">
+                    AND jc_fapiao.verificatio_time &gt;= CONCAT(#{condition.verificatio_start},' 00:00:00')
+                </if>
+                <if test="condition.verificatio_end!=null">
+                    AND jc_fapiao.verificatio_time &lt;= CONCAT(#{condition.verificatio_end},' 23:59:59')
+                </if>
+                <!--日期区间结束-->
+                <if test="condition.create_userid!=null">
+                    AND jc_fapiao.create_userid = #{condition.create_userid}
+                </if>
+                <if test="condition.audit_userid!=null">
+                    AND jc_fapiao.audit_userid = #{condition.audit_userid}
+                </if>
+                <if test="condition.source!= null">
+                    AND jc_fapiao.source=#{condition.source}
+                </if>
+                <if test="condition.is_add == '1'.toString()">
+                    <if test="condition.order_xs != null">
+                        AND jc_oa_schedule.creator=#{condition.order_xs}
+                    </if>
+                    <if test="condition.society != null">
+                        AND jc_oa_schedule.office_account=(SELECT id from wm_office_account WHERE name LIKE
+                        CONCAT('%',#{condition.society},'%'))
+                    </if>
+                </if>
+                <if test="condition.state!=null">
+                    AND jc_fapiao.state IN
+                    <foreach collection="condition.state" item="state" open="(" separator="," close=")">
+                        #{state}
+                    </foreach>
+                </if>
+            </if>
+            AND is_deleted=0
+        </where>
+        GROUP BY
+        jc_fapiao.id) a
+    </select>
+
+    <select id="excelDrive" resultMap="fapiaoExcel">
+        SELECT jc_fapiao.*,
+        ( SELECT NAME FROM bms_manager WHERE id = jc_fapiao.create_userid ) creator_name,
+        ( SELECT NAME FROM bms_manager WHERE id = jc_fapiao.audit_userid ) audit_username
+        <if test="condition.is_add == '1'.toString()">
+            ,IFNULL(( SELECT NAME FROM wm_office_account WHERE id = jc_oa_schedule.office_account ),'')AS society
+            ,IFNULL((jc_oa_schedule.creator ),'') AS sell_id
+            ,IFNULL(( SELECT NAME FROM bms_manager WHERE id = jc_oa_schedule.creator ),'') AS sell_name
+            ,IFNULL( jc_oa_schedule.put_date,'') AS order_time
+        </if>
+        FROM
+        jc_fapiao
+        <if test="condition.is_add == '1'.toString()">
+        LEFT JOIN jc_payment_app ON jc_fapiao.id = jc_payment_app.fapiao
+        LEFT JOIN jc_oa_schedule ON jc_payment_app.SCHEDULE = jc_oa_schedule.id
+    </if>
+        <where>
+            <if test="condition != null">
+                <if test="condition.bill_no!=null and condition.bill_no!=''">
+                    AND jc_fapiao.bill_no LIKE CONCAT('%',#{condition.bill_no},'%')
+                </if>
+                <if test="condition.is_add!= null">
+                    AND jc_fapiao.is_add = #{condition.is_add}
+                </if>
+                <if test="condition.make_name!=null and condition.make_name!=''">
+                    AND jc_fapiao.make_name= #{condition.make_name}
+                </if>
+                <if test="condition.type!=null and condition.type!=''">
+                    AND jc_fapiao.type= #{condition.type}
+                </if>
+                <if test="condition.enter_name != null and condition.enter_name != ''">
+                    AND jc_fapiao.enter_name LIKE CONCAT('%',#{condition.enter_name},'%')
+                </if>
+                <!--日期区间开始-->
+                <if test="condition.createrdate_start!=null">
+                    AND jc_fapiao.create_date &gt;= CONCAT(#{condition.createrdate_start},' 00:00:00')
+                </if>
+                <if test="condition.createrdate_end!=null">
+                    AND jc_fapiao.create_date &lt;= CONCAT(#{condition.createrdate_end},' 23:59:59')
+                </if>
+                <if test="condition.makedate_start!=null">
+                    AND jc_fapiao.make_date &gt;= CONCAT(#{condition.makedate_start},' 00:00:00')
+                </if>
+                <if test="condition.makedate_end!=null">
+                    AND jc_fapiao.make_date &lt;= CONCAT(#{condition.makedate_end},' 23:59:59')
+                </if>
+                <if test="condition.verificatio_start!=null">
+                    AND jc_fapiao.verificatio_time &gt;= CONCAT(#{condition.verificatio_start},' 00:00:00')
+                </if>
+                <if test="condition.verificatio_end!=null">
+                    AND jc_fapiao.verificatio_time &lt;= CONCAT(#{condition.verificatio_end},' 23:59:59')
+                </if>
+                <!--日期区间结束-->
+                <if test="condition.create_userid!=null">
+                    AND jc_fapiao.create_userid = #{condition.create_userid}
+                </if>
+                <if test="condition.audit_userid!=null">
+                    AND jc_fapiao.audit_userid = #{condition.audit_userid}
+                </if>
+                <if test="condition.is_add == '1'.toString()">
+                    <if test="condition.order_xs != null">
+                        AND jc_oa_schedule.creator=#{condition.order_xs}
+                    </if>
+                    <if test="condition.society != null">
+                        AND jc_oa_schedule.office_account=(SELECT id from wm_office_account WHERE name LIKE
+                        CONCAT('%',#{condition.society},'%'))
+                    </if>
+                </if>
+                <if test="condition.state!=null">
+                    AND jc_fapiao.state IN
+                    <foreach collection="condition.state" item="state" open="(" separator="," close=")">
+                        #{state}
+                    </foreach>
+                </if>
+            </if>
+            AND is_deleted=0
+        </where>
+        ORDER BY jc_fapiao.id DESC
+    </select>
+
+    <select id="excelDrive2" resultType="com.ykhd.office.domain.resp.Fapiao_Excel2">
+        SELECT jc_fapiao.*,
+        ( SELECT NAME FROM bms_manager WHERE id = jc_fapiao.create_userid ) creator_name,
+        ( SELECT NAME FROM bms_manager WHERE id = jc_fapiao.audit_userid ) audit_username
+        <if test="condition.is_add == '1'.toString()">
+            ,IFNULL(( SELECT NAME FROM wm_office_account WHERE id = jc_oa_schedule.office_account ),'')AS society
+            ,IFNULL(( SELECT NAME FROM bms_manager WHERE id = jc_oa_schedule.creator ),'') AS sell_name
+            ,IFNULL( jc_oa_schedule.put_date,'') AS order_time
+        </if>
+        FROM
+        jc_fapiao
+        <if test="condition.is_add == '1'.toString()">
+            LEFT JOIN jc_payment_app ON jc_fapiao.id = jc_payment_app.fapiao
+            LEFT JOIN jc_oa_schedule ON jc_payment_app.SCHEDULE = jc_oa_schedule.id
+        </if>
+        <where>
+            <if test="condition != null">
+                <if test="condition.bill_no!=null and condition.bill_no!=''">
+                    AND jc_fapiao.bill_no LIKE CONCAT('%',#{condition.bill_no},'%')
+                </if>
+                <if test="condition.is_add!= null">
+                    AND jc_fapiao.is_add = #{condition.is_add}
+                </if>
+                <if test="condition.make_name!=null and condition.make_name!=''">
+                    AND jc_fapiao.make_name= #{condition.make_name}
+                </if>
+                <if test="condition.type!=null and condition.type!=''">
+                    AND jc_fapiao.type= #{condition.type}
+                </if>
+                <if test="condition.enter_name != null and condition.enter_name != ''">
+                    AND jc_fapiao.enter_name LIKE CONCAT('%',#{condition.enter_name},'%')
+                </if>
+                <!--日期区间开始-->
+                <if test="condition.createrdate_start!=null">
+                    AND jc_fapiao.create_date &gt;= CONCAT(#{condition.createrdate_start},' 00:00:00')
+                </if>
+                <if test="condition.createrdate_end!=null">
+                    AND jc_fapiao.create_date &lt;= CONCAT(#{condition.createrdate_end},' 23:59:59')
+                </if>
+                <if test="condition.makedate_start!=null">
+                    AND jc_fapiao.make_date &gt;= CONCAT(#{condition.makedate_start},' 00:00:00')
+                </if>
+                <if test="condition.makedate_end!=null">
+                    AND jc_fapiao.make_date &lt;= CONCAT(#{condition.makedate_end},' 23:59:59')
+                </if>
+                <if test="condition.verificatio_start!=null">
+                    AND jc_fapiao.verificatio_time &gt;= CONCAT(#{condition.verificatio_start},' 00:00:00')
+                </if>
+                <if test="condition.verificatio_end!=null">
+                    AND jc_fapiao.verificatio_time &lt;= CONCAT(#{condition.verificatio_end},' 23:59:59')
+                </if>
+                <!--日期区间结束-->
+                <if test="condition.create_userid!=null">
+                    AND jc_fapiao.create_userid = #{condition.create_userid}
+                </if>
+                <if test="condition.audit_userid!=null">
+                    AND jc_fapiao.audit_userid = #{condition.audit_userid}
+                </if>
+                <if test="condition.is_add == '1'.toString()">
+                    <if test="condition.order_xs != null">
+                        AND jc_oa_schedule.creator=#{condition.order_xs}
+                    </if>
+                    <if test="condition.society != null">
+                        AND jc_oa_schedule.office_account=(SELECT id from wm_office_account WHERE name LIKE
+                        CONCAT('%',#{condition.society},'%'))
+                    </if>
+                </if>
+                <if test="condition.state!=null">
+                    AND jc_fapiao.state IN
+                    <foreach collection="condition.state" item="state" open="(" separator="," close=")">
+                        #{state}
+                    </foreach>
+                </if>
+            </if>
+            AND is_deleted=0
+        </where>
+        ORDER BY jc_fapiao.id DESC
+    </select>
+
+    <!--获取客户历史开票信息-->
+    <select id="getBillInfoByCustomer" resultType="java.util.Map">
+        SELECT invoice_project,duty_no,bank_name,bank_no,address,phone FROM jc_fapiao
+        WHERE is_add = "0" AND state != "4"
+        <if test="conditions.type != null">
+            AND type =#{conditions.type}
+        </if>
+        <if test="conditions.enter_name != null">
+            AND enter_name =#{conditions.enter_name}
+        </if>
+        <if test="conditions.create_userid != null">
+            AND create_userid =#{conditions.create_userid}
+        </if>
+        ORDER BY id DESC LIMIT 1;
+    </select>
+
+
+    <select id="findDuty" resultType="java.math.BigDecimal">
+        SELECT
+        ( SELECT SUM( amount ) FROM jc_payment_app WHERE fapiao=#{fapiaoid}
+        AND `schedule` IN ( SELECT id FROM jc_oa_schedule WHERE creator = #{creator} ) )/ SUM( amount
+        )
+        FROM
+        jc_payment_app
+        WHERE
+        fapiao=#{fapiaoid}
+    </select>
+
+
+</mapper>
